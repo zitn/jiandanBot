@@ -13,7 +13,7 @@ func Run() {
 	initBot()
 
 	// todo debug日志开关
-	bot.Debug = true
+	bot.Debug = false
 
 	go listenUpdate()
 }
@@ -25,7 +25,7 @@ func initBot() {
 		log.Panic(err)
 	}
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	log.Println("init done")
 }
 
 func listenUpdate() {
@@ -58,8 +58,6 @@ func listenUpdate() {
 			continue
 		}
 
-		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
 		//msg.ReplyToMessageID = update.Message.MessageID
 
@@ -69,9 +67,9 @@ func listenUpdate() {
 
 func Sender(messagesChan chan tgbotapi.Chattable) {
 	for msg := range messagesChan {
-		res, err := bot.Send(msg)
+		_, err := bot.Send(msg)
 		if err != nil {
-			log.Println(res)
+			log.Println(err)
 		}
 	}
 }

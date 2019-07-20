@@ -1,6 +1,4 @@
 FROM golang as gobuilder
-#COPY go.mod go.sum ./
-#RUN go mod download
 WORKDIR /test
 COPY . .
 RUN go mod download
