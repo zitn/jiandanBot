@@ -47,17 +47,20 @@ func getCommentList(url string) []types.Comment {
 	if err != nil {
 		log.Println(err)
 	}
-	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)
 
 	if err != nil {
-		log.Panic(err)
+		log.Println(err)
 	}
 
 	var commentList types.CommentList
 	err = json.Unmarshal(body, &commentList)
 	if err != nil {
-		log.Panic(err)
+		log.Println(err)
+	}
+	err = r.Body.Close()
+	if err != nil {
+		log.Println(err)
 	}
 	return commentList.Comments
 }
@@ -67,18 +70,21 @@ func getTucao(url string) []types.TuCaoDetial {
 	if err != nil {
 		log.Println(err)
 	}
-	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)
 
 	if err != nil {
-		log.Panic(err)
+		log.Println(err)
 	}
 
 	var tuCao types.TuCao
 	err = json.Unmarshal(body, &tuCao)
 	if err != nil {
-		log.Panic(err)
+		log.Println(err)
 	}
 
+	err = r.Body.Close()
+	if err != nil {
+		log.Println(err)
+	}
 	return tuCao.Tucao
 }

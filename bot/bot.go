@@ -4,6 +4,7 @@ import (
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/spf13/viper"
 	"log"
+	"time"
 )
 
 var bot *tgbotapi.BotAPI
@@ -33,7 +34,9 @@ func listenUpdate() {
 	updates, err := bot.GetUpdatesChan(u)
 
 	if err != nil {
-		log.Panic(err)
+		log.Println(err)
+		time.Sleep(5 * time.Second)
+		listenUpdate()
 	}
 
 	for update := range updates {
