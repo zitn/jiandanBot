@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"log"
@@ -11,13 +12,16 @@ import (
 )
 
 var (
-	myClient    = &http.Client{Timeout: 10 * time.Second}
+	myClient    = &http.Client{Timeout: 30 * time.Second}
 	lastComment string
 )
 
 func GetJiandan(commentsChan chan types.Comment) {
 	for {
-		comments := getCommentList(viper.GetString("ApiAddress"))
+		comments, err := getCommentList(viper.GetString("ApiAddress"))
+		if err != nil {
+			continue
+		}
 		for _, comment := range comments {
 
 			if comment.Id != lastComment {
@@ -42,10 +46,11 @@ func GetJiandan(commentsChan chan types.Comment) {
 
 }
 
-func getCommentList(url string) []types.Comment {
+func getCommentList(url string) ([]types.Comment, error) {
 	r, err := myClient.Get(url)
 	if err != nil {
 		log.Println(err)
+		return nil, errors.New("time out")
 	}
 	body, err := ioutil.ReadAll(r.Body)
 
@@ -62,7 +67,7 @@ func getCommentList(url string) []types.Comment {
 	if err != nil {
 		log.Println(err)
 	}
-	return commentList.Comments
+	return commentList.Comments, nil
 }
 
 func getTucao(url string) []types.TuCaoDetial {
