@@ -27,7 +27,11 @@ func GetJiandan(commentsChan chan types.Comment) {
 			if comment.Id != lastComment {
 				// 如果为新帖子,获取吐槽,将数据发送给maker进行处理
 				if comment.SubCommentCount != "0" {
-					comment.TuCao = getTucao("https://i.jandan.net/tucao/" + comment.Id)
+					comment.TuCao, err = getTucao("https://i.jandan.net/tucao/" + comment.Id)
+					if err != nil {
+						log.Println(err)
+						continue
+					}
 				}
 				commentsChan <- comment
 			} else {
@@ -43,53 +47,54 @@ func GetJiandan(commentsChan chan types.Comment) {
 		// todo 测试代码 5秒抓取一次数据
 		//time.Sleep(5 * time.Second)
 	}
-
 }
+
+// todo 重构get函数
 
 func getCommentList(url string) ([]types.Comment, error) {
 	r, err := myClient.Get(url)
 	if err != nil {
-		log.Println(err)
 		return nil, errors.New("time out")
 	}
 	body, err := ioutil.ReadAll(r.Body)
 
 	if err != nil {
-		log.Println(err)
+		return nil, errors.New("read body error")
 	}
-
 	var commentList types.CommentList
 	err = json.Unmarshal(body, &commentList)
 	if err != nil {
-		log.Println(err)
+		return nil, errors.New("unmarshal error")
 	}
 	err = r.Body.Close()
 	if err != nil {
-		log.Println(err)
+		return nil, errors.New("can't close client")
 	}
 	return commentList.Comments, nil
 }
 
-func getTucao(url string) []types.TuCaoDetial {
+func getTucao(url string) ([]types.TuCaoDetial, error) {
 	r, err := myClient.Get(url)
 	if err != nil {
 		log.Println(err)
+		return nil, errors.New("read body error")
 	}
 	body, err := ioutil.ReadAll(r.Body)
 
 	if err != nil {
 		log.Println(err)
+		return nil, errors.New("read body error")
 	}
-
+	err = r.Body.Close()
+	if err != nil {
+		log.Println(err)
+		return nil, errors.New("can't close client")
+	}
 	var tuCao types.TuCao
 	err = json.Unmarshal(body, &tuCao)
 	if err != nil {
 		log.Println(err)
+		return nil, errors.New("unmarshal error")
 	}
-
-	err = r.Body.Close()
-	if err != nil {
-		log.Println(err)
-	}
-	return tuCao.Tucao
+	return tuCao.Tucao, nil
 }
