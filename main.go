@@ -23,7 +23,7 @@ func main() {
 	go crawler.GetJiandan(commentsChan)
 
 	// 启动煎蛋maker
-	go maker.Jiandan(messageChan, commentsChan)
+	maker.Jiandan(messageChan, commentsChan)
 
 	// todo 测试
 	//bot.SendTester()
