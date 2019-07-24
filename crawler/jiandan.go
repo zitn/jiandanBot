@@ -20,6 +20,7 @@ func GetJiandan(commentsChan chan<- types.Comment) {
 	for {
 		comments, err := getCommentList(viper.GetString("ApiAddress"))
 		if err != nil {
+			log.Println(err)
 			continue
 		}
 		for _, comment := range comments {
@@ -44,8 +45,6 @@ func GetJiandan(commentsChan chan<- types.Comment) {
 		// 20分钟get一次数据
 		time.Sleep(20 * time.Minute)
 
-		// todo 测试代码 5秒抓取一次数据
-		//time.Sleep(5 * time.Second)
 	}
 }
 
@@ -76,24 +75,20 @@ func getCommentList(url string) ([]types.Comment, error) {
 func getTucao(url string) ([]types.TuCaoDetial, error) {
 	r, err := myClient.Get(url)
 	if err != nil {
-		log.Println(err)
 		return nil, errors.New("read body error")
 	}
 	body, err := ioutil.ReadAll(r.Body)
 
 	if err != nil {
-		log.Println(err)
 		return nil, errors.New("read body error")
 	}
 	err = r.Body.Close()
 	if err != nil {
-		log.Println(err)
 		return nil, errors.New("can't close client")
 	}
 	var tuCao types.TuCao
 	err = json.Unmarshal(body, &tuCao)
 	if err != nil {
-		log.Println(err)
 		return nil, errors.New("unmarshal error")
 	}
 	return tuCao.Tucao, nil
