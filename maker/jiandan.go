@@ -20,7 +20,7 @@ func deleteHTML(s string) string {
 	return s
 }
 
-func Jiandan(messages chan tgbotapi.Chattable, comments chan types.Comment) {
+func Jiandan(messages chan<- tgbotapi.Chattable, comments <-chan types.Comment) {
 
 	funcMap := template.FuncMap{"deleteHTML": deleteHTML}
 

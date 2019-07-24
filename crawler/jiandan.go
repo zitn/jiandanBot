@@ -16,7 +16,7 @@ var (
 	lastComment string
 )
 
-func GetJiandan(commentsChan chan types.Comment) {
+func GetJiandan(commentsChan chan<- types.Comment) {
 	for {
 		comments, err := getCommentList(viper.GetString("ApiAddress"))
 		if err != nil {
