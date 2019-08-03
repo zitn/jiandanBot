@@ -5,23 +5,24 @@ import (
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/spf13/viper"
 	"log"
+	"myTeleBot/types"
 	"time"
 )
 
-var bot *tgbotapi.BotAPI
+var (
+	// 方便包内调用
+	bot *tgbotapi.BotAPI
+)
 
-var messagesChan chan tgbotapi.Chattable
-
-func Run(mc chan tgbotapi.Chattable) {
+func Run(messagesChan chan tgbotapi.Chattable, commentChannel chan types.CommentMessage) {
 	initBot()
 
-	// bot 包使用messageChan进行消息的收发
-	messagesChan = mc
 	// debug日志开关
-	bot.Debug = false
+	bot.Debug = true
 
 	go receiver()
-	go sender()
+	go sender(messagesChan)
+	go CommentSender(commentChannel)
 }
 
 // 初始化bot,失败会重试
@@ -54,16 +55,7 @@ func receiver() {
 		if update.Message.Chat.ID != viper.GetInt64("AdminID") {
 			continue
 		}
-		// 将消息交给命令路由
+		// 将消息交给路由,处理下一条消息
 		go baseRouter(update)
-	}
-}
-
-func sender() {
-	for msg := range messagesChan {
-		_, err := bot.Send(msg)
-		if err != nil {
-			log.Println(err)
-		}
 	}
 }
