@@ -18,17 +18,17 @@ var (
 
 func GetJiandan(commentsChan chan<- types.Comment) {
 	for {
-		comments, err := getCommentList(viper.GetString("ApiAddress"))
+		comments, err := GetCommentList()
 		if err != nil {
 			log.Println(err)
 			continue
 		}
 		for _, comment := range comments {
-
+			// 如果为新帖子,获取吐槽,将数据发送给maker进行处理 todo 使用更稳定的防重复方法,因为煎蛋会删除部分帖子,如果恰好删除了lastComment记录的id,会导致重复
 			if comment.Id != lastComment {
-				// 如果为新帖子,获取吐槽,将数据发送给maker进行处理
+				// 如果新帖子的吐槽数不为0,则获取吐槽
 				if comment.SubCommentCount != "0" {
-					comment.TuCao, err = getTucao("https://i.jandan.net/tucao/" + comment.Id)
+					comment.TuCao, err = getTucao(comment.Id)
 					if err != nil {
 						log.Println(err)
 						continue
@@ -40,7 +40,6 @@ func GetJiandan(commentsChan chan<- types.Comment) {
 				break
 			}
 		}
-
 		lastComment = comments[0].Id
 		// 20分钟get一次数据
 		time.Sleep(20 * time.Minute)
@@ -50,8 +49,8 @@ func GetJiandan(commentsChan chan<- types.Comment) {
 
 // todo 重构get函数
 
-func getCommentList(url string) ([]types.Comment, error) {
-	r, err := myClient.Get(url)
+func GetCommentList() ([]types.Comment, error) {
+	r, err := myClient.Get(viper.GetString("ApiAddress"))
 	if err != nil {
 		return nil, errors.New("time out")
 	}
@@ -72,8 +71,8 @@ func getCommentList(url string) ([]types.Comment, error) {
 	return commentList.Comments, nil
 }
 
-func getTucao(url string) ([]types.TuCaoDetial, error) {
-	r, err := myClient.Get(url)
+func getTucao(commentID string) ([]types.TuCaoDetial, error) {
+	r, err := myClient.Get("https://i.jandan.net/tucao/" + commentID)
 	if err != nil {
 		return nil, errors.New("read body error")
 	}
