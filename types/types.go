@@ -51,11 +51,11 @@ type TuCaoDetial struct {
 
 type CommentMessage struct {
 	HaveTucao      bool
-	CommentMessage tgbotapi.Chattable
+	CommentMessage tgbotapi.MediaGroupConfig
 	TucaoMessage   tgbotapi.MessageConfig
 }
 
 type TucaoUpdate struct {
-	messageID    int
-	TucaoMessage tgbotapi.MessageConfig
+	CommentId  string
+	UpdateData tgbotapi.Update
 }

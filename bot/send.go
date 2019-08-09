@@ -16,11 +16,13 @@ func sender() {
 }
 
 // 煎蛋帖子sender
-func CommentSender() {
+func commentSender() {
 	for message := range channel.CommentMessageChannel {
 		CommentResponse, err := botAPI.Send(message.CommentMessage)
 		if err != nil {
 			log.Println(err)
+			// 如果图片发送有误，则continue
+			continue
 		}
 		message.TucaoMessage.ReplyToMessageID = CommentResponse.MessageID
 		_, err = botAPI.Send(message.TucaoMessage)

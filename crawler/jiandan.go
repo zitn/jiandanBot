@@ -13,15 +13,13 @@ import (
 )
 
 var (
-	myClient        = &http.Client{Timeout: 30 * time.Second}
-	lastCommentTime = time.Now().Add(30 * time.Minute) // todo 30分钟为测试之用
+	myClient = &http.Client{Timeout: 30 * time.Second}
 )
 
-func init() {
-	go getJiandan()
-}
-
-func getJiandan() {
+func GetJiandan() {
+	lastCommentTime := time.Now().Add(-time.Hour)
+	var newTime time.Time
+	tmpTime := lastCommentTime
 	for {
 		comments, err := getCommentList()
 		if err != nil {
@@ -29,12 +27,15 @@ func getJiandan() {
 			continue
 		}
 		for _, comment := range comments {
-			// 如果为新帖子,获取吐槽,将数据发送给maker进行处理
-			newTime, err := time.Parse("2006-01-02 15:04:05", comment.Date)
+			newTime, err = time.Parse("2006-01-02 15:04:05", comment.Date)
 			if err != nil {
 				log.Println(err)
 				continue
 			}
+			if tmpTime.Before(newTime) {
+				tmpTime = newTime
+			}
+			// 如果记录的最晚帖子时间在新帖子时间之前
 			if lastCommentTime.Before(newTime) {
 				// 如果新帖子的吐槽数不为0,则获取吐槽
 				if comment.SubCommentCount != "0" {
@@ -46,11 +47,12 @@ func getJiandan() {
 				}
 				channel.CommentsChannel <- comment
 			} else {
-				// 如果id重复,则停止发送剩余数据
-				lastCommentTime = newTime
+				// 则停止发送剩余数据
 				break
 			}
 		}
+
+		lastCommentTime = tmpTime
 		// 20分钟get一次数据
 		time.Sleep(20 * time.Minute)
 

@@ -10,7 +10,6 @@ import (
 	"myTeleBot/crawler"
 	"myTeleBot/types"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -24,17 +23,13 @@ OO:{{.OO}} XX:{{.XX}}`
 	commentTemplate, _ = template.New("comment").Funcs(funcMap).Parse(commentTemplateText)
 
 	// 吐槽模板
-	tucaoTemplateText = `{{range .TuCao}}{{.Author}}:{{.Content|deleteHTML}}
+	tucaoTemplateText = `{{range .}}{{.Author}}:{{.Content|deleteHTML}}
 OO:{{.OO}} XX:{{.XX}}
 {{end}}`
 	tucaoTemplate, _ = template.New("tucao").Funcs(funcMap).Parse(tucaoTemplateText)
 )
 
-func init() {
-	jiandan()
-}
-
-func jiandan() {
+func Jiandan() {
 	//  处理每一条帖子,然后发送
 	for comment := range channel.CommentsChannel {
 		var commentBuff bytes.Buffer
@@ -84,10 +79,10 @@ func jiandan() {
 
 		// 吐槽
 		var tucaoBuff bytes.Buffer
-		tucaoBuff.WriteString("=======吐槽=======")
+		tucaoBuff.WriteString("=======吐槽=======\n")
 		if comment.SubCommentCount != "0" {
 
-			err = tucaoTemplate.Execute(&tucaoBuff, comment)
+			err = tucaoTemplate.Execute(&tucaoBuff, comment.TuCao)
 			if err != nil {
 				log.Println(err)
 				continue
@@ -122,8 +117,8 @@ func jiandan() {
 }
 
 func UpdateTucao() {
-	for updateID := range channel.RequireUpdateTucaoChannel {
-		newTucao, err := crawler.GetTucao(updateID)
+	for req := range channel.RequireUpdateTucaoChannel {
+		newTucao, err := crawler.GetTucao(req.CommentId)
 		if err != nil {
 			log.Println(err)
 			continue
@@ -133,26 +128,24 @@ func UpdateTucao() {
 			continue
 		}
 		var tucaoBuff bytes.Buffer
-		tucaoBuff.WriteString("=======吐槽=======")
+		tucaoBuff.WriteString("=======吐槽=======\n")
 		err = tucaoTemplate.Execute(&tucaoBuff, newTucao)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-		//numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(
-		//	tgbotapi.NewInlineKeyboardRow(
-		//		tgbotapi.NewInlineKeyboardButtonData("更新吐槽", "updateTucao "+updateID),
-		//	),
-		//)
-		messageIDInt, err := strconv.Atoi(updateID)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
+		numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("更新吐槽", "updateTucao "+req.CommentId),
+			),
+		)
+
 		editedMsg := tgbotapi.EditMessageTextConfig{
 			BaseEdit: tgbotapi.BaseEdit{
+				//ChatID:          req.UpdateData.CallbackQuery.Message.Chat.ID,
 				ChannelUsername: viper.GetString("ChannelUsername"),
-				MessageID:       messageIDInt,
+				MessageID:       req.UpdateData.CallbackQuery.Message.MessageID,
+				ReplyMarkup:     &numericKeyboard,
 			},
 			Text:                  tucaoBuff.String(),
 			DisableWebPagePreview: true,

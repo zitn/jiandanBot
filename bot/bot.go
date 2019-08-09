@@ -12,7 +12,7 @@ var (
 	botAPI = initBot()
 )
 
-// 初始化bot,失败会重试
+// 初始化bot
 func initBot() *tgbotapi.BotAPI {
 	api, err := tgbotapi.NewBotAPI(viper.GetString("Token"))
 	if err != nil {
@@ -23,13 +23,12 @@ func initBot() *tgbotapi.BotAPI {
 }
 
 // 初始化 bot 的各个服务
-func init() {
+func Run() {
 	// debug日志开关
-	botAPI.Debug = true
-
+	botAPI.Debug = false
 	go receiver()
 	go sender()
-	go CommentSender()
+	go commentSender()
 }
 
 func receiver() {
@@ -45,11 +44,10 @@ func receiver() {
 	}
 
 	for update := range updates {
-		if update.Message == nil {
-			continue
+		if update.CallbackQuery != nil {
+			go callbackRouter(update)
 		}
-		// 只回应来自管理员的消息
-		if update.Message.Chat.ID != viper.GetInt64("AdminID") {
+		if update.Message == nil {
 			continue
 		}
 		// 将消息交给路由,处理下一条消息

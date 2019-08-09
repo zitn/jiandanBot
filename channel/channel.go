@@ -14,7 +14,7 @@ var (
 	// 煎蛋爬虫爬取的原始数据
 	CommentsChannel chan types.Comment
 	// 煎蛋更新需求channel
-	RequireUpdateTucaoChannel chan string
+	RequireUpdateTucaoChannel chan types.TucaoUpdate
 	// todo 错误日志发送至管理员channel
 
 )
@@ -24,5 +24,5 @@ func init() {
 	NormalMessageChannel = make(chan tgbotapi.Chattable, 100)
 	CommentMessageChannel = make(chan types.CommentMessage, 40)
 	CommentsChannel = make(chan types.Comment, 30)
-	RequireUpdateTucaoChannel = make(chan string, 30)
+	RequireUpdateTucaoChannel = make(chan types.TucaoUpdate, 30)
 }
