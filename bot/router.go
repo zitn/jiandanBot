@@ -3,7 +3,7 @@ package bot
 import (
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/spf13/viper"
-	"myTeleBot/maker"
+	"myTeleBot/channel"
 	"strings"
 )
 
@@ -12,14 +12,11 @@ func baseRouter(update tgbotapi.Update) {
 		commandAndData := strings.Fields(update.CallbackQuery.Data)
 		switch commandAndData[0] {
 		case "updateTucao":
-			err := maker.UpdateTucao(viper.GetInt64("ChannelID"), update.CallbackQuery.Message.MessageID, commandAndData[1], update.CallbackQuery.Message.Caption)
-			if err != nil {
-				// 返回错误
-				_, _ = bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, err.Error()))
-
-			}
+			// 返回提示
+			channel.RequireUpdateTucaoChannel <- commandAndData[1]
+			_, _ = botAPI.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "正在更新，请勿重复点击"))
 		default:
-			_, _ = bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "command not found"))
+			_, _ = botAPI.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "command not found"))
 
 		}
 	}
@@ -37,12 +34,15 @@ func baseRouter(update tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
 	//msg.ReplyToMessageID = update.Message.MessageID
 
-	_, _ = bot.Send(msg)
+	_, _ = botAPI.Send(msg)
 }
 
 func updateApiAddress(update tgbotapi.Update) {
-	viper.Set("ApiAddress", update.Message.Text)
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "api地址已更新")
-	msg.ReplyToMessageID = update.Message.MessageID
-	_, _ = bot.Send(msg)
+	if update.Message.Text != "" {
+		viper.Set("ApiAddress", update.Message.Text)
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "api地址已更新为"+update.Message.Text)
+		msg.ReplyToMessageID = update.Message.MessageID
+		_, _ = botAPI.Send(msg)
+	}
+
 }

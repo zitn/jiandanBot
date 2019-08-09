@@ -6,50 +6,58 @@ import (
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"log"
+	"myTeleBot/channel"
 	"myTeleBot/types"
 	"net/http"
 	"time"
 )
 
 var (
-	myClient    = &http.Client{Timeout: 30 * time.Second}
-	lastComment string
+	myClient        = &http.Client{Timeout: 30 * time.Second}
+	lastCommentTime = time.Now().Add(30 * time.Minute) // todo 30分钟为测试之用
 )
 
-func GetJiandan(commentsChan chan<- types.Comment) {
+func init() {
+	go getJiandan()
+}
+
+func getJiandan() {
 	for {
-		comments, err := GetCommentList()
+		comments, err := getCommentList()
 		if err != nil {
 			log.Println(err)
 			continue
 		}
 		for _, comment := range comments {
-			// 如果为新帖子,获取吐槽,将数据发送给maker进行处理 todo 使用更稳定的防重复方法,因为煎蛋会删除部分帖子,如果恰好删除了lastComment记录的id,会导致重复
-			if comment.Id != lastComment {
+			// 如果为新帖子,获取吐槽,将数据发送给maker进行处理
+			newTime, err := time.Parse("2006-01-02 15:04:05", comment.Date)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			if lastCommentTime.Before(newTime) {
 				// 如果新帖子的吐槽数不为0,则获取吐槽
 				if comment.SubCommentCount != "0" {
-					comment.TuCao, err = getTucao(comment.Id)
+					comment.TuCao, err = GetTucao(comment.Id)
 					if err != nil {
 						log.Println(err)
 						continue
 					}
 				}
-				commentsChan <- comment
+				channel.CommentsChannel <- comment
 			} else {
 				// 如果id重复,则停止发送剩余数据
+				lastCommentTime = newTime
 				break
 			}
 		}
-		lastComment = comments[0].Id
 		// 20分钟get一次数据
 		time.Sleep(20 * time.Minute)
 
 	}
 }
 
-// todo 重构get函数
-
-func GetCommentList() ([]types.Comment, error) {
+func getCommentList() ([]types.Comment, error) {
 	r, err := myClient.Get(viper.GetString("ApiAddress"))
 	if err != nil {
 		return nil, errors.New("time out")
@@ -71,7 +79,7 @@ func GetCommentList() ([]types.Comment, error) {
 	return commentList.Comments, nil
 }
 
-func getTucao(commentID string) ([]types.TuCaoDetial, error) {
+func GetTucao(commentID string) ([]types.TuCaoDetial, error) {
 	r, err := myClient.Get("https://i.jandan.net/tucao/" + commentID)
 	if err != nil {
 		return nil, errors.New("read body error")

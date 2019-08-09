@@ -1,44 +1,41 @@
 package bot
 
 import (
-	"errors"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/spf13/viper"
 	"log"
-	"myTeleBot/types"
 	"time"
 )
 
 var (
-	// 方便包内调用
-	bot *tgbotapi.BotAPI
+	// 包级别变量，方便包内调用
+	botAPI = initBot()
 )
 
-func Run(messagesChan chan tgbotapi.Chattable, commentChannel chan types.CommentMessage) {
-	initBot()
-
-	// debug日志开关
-	bot.Debug = true
-
-	go receiver()
-	go sender(messagesChan)
-	go CommentSender(commentChannel)
-}
-
 // 初始化bot,失败会重试
-func initBot() {
-	err := errors.New("haven't init bot")
-	for err != nil {
-		bot, err = tgbotapi.NewBotAPI(viper.GetString("Token"))
-		time.Sleep(5 * time.Second)
+func initBot() *tgbotapi.BotAPI {
+	api, err := tgbotapi.NewBotAPI(viper.GetString("Token"))
+	if err != nil {
+		log.Panic(err)
 	}
 	log.Println("init done")
+	return api
+}
+
+// 初始化 bot 的各个服务
+func init() {
+	// debug日志开关
+	botAPI.Debug = true
+
+	go receiver()
+	go sender()
+	go CommentSender()
 }
 
 func receiver() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
-	updates, err := bot.GetUpdatesChan(u)
+	updates, err := botAPI.GetUpdatesChan(u)
 
 	if err != nil {
 		log.Println(err)

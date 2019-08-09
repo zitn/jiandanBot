@@ -1,5 +1,7 @@
 package types
 
+import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+
 type CommentList struct {
 	Status        string    `json:"status"`
 	CurrentPage   int       `json:"current_page"`
@@ -38,11 +40,22 @@ type TuCaoDetial struct {
 	Content      string `json:"comment_content"`
 	Date         string `json:"comment_date"`
 	DateInt      int    `json:"comment_date_int"`
-	Parent       int `json:"comment_parent"`
+	Parent       int    `json:"comment_parent"`
 	PostId       int    `json:"comment_post_id"`
 	ReplyId      int    `json:"comment_reply_id"`
 	IsJandanUser int    `json:"is_jandan_user"`
 	IsTipUser    int    `json:"is_tip_user"`
 	XX           int    `json:"vote_negative"`
 	OO           int    `json:"vote_positive"`
+}
+
+type CommentMessage struct {
+	HaveTucao      bool
+	CommentMessage tgbotapi.Chattable
+	TucaoMessage   tgbotapi.MessageConfig
+}
+
+type TucaoUpdate struct {
+	messageID    int
+	TucaoMessage tgbotapi.MessageConfig
 }
