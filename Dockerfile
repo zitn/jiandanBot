@@ -9,7 +9,7 @@ RUN go mod download
 # 复制源文件进入容器
 COPY ./bot ./bot
 COPY ./main.go .
-COPY ./channel .channel
+COPY ./channel ./channel
 COPY ./crawler ./crawler
 COPY ./maker ./maker
 COPY ./types ./types
