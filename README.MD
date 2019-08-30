@@ -21,3 +21,13 @@
     }
 ```
 ApiAddress 可通过抓包官方app得到
+
+## docker 部署
+```bash
+build命令：
+$ docker build -t bot . 
+run:
+$ docker run --name <bot_name> -d -v /<path>/config/:/config bot
+查看log:
+$ docker logs -f <bot_name>
+```
