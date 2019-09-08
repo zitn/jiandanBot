@@ -5,7 +5,6 @@ import (
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/spf13/viper"
 	"html/template"
-	"log"
 	"myTeleBot/channel"
 	"myTeleBot/crawler"
 	"myTeleBot/types"
@@ -36,7 +35,8 @@ func Jiandan() {
 
 		err := commentTemplate.Execute(&commentBuff, comment)
 		if err != nil {
-			log.Println(err)
+			//log.Println(err)
+			channel.ErrorMessage <- err
 			continue
 		}
 
@@ -84,7 +84,8 @@ func Jiandan() {
 
 			err = tucaoTemplate.Execute(&tucaoBuff, comment.TuCao)
 			if err != nil {
-				log.Println(err)
+				//log.Println(err)
+				channel.ErrorMessage <- err
 				continue
 			}
 		}
@@ -120,7 +121,8 @@ func UpdateTucao() {
 	for req := range channel.RequireUpdateTucaoChannel {
 		newTucao, err := crawler.GetTucao(req.CommentId)
 		if err != nil {
-			log.Println(err)
+			//log.Println(err)
+			channel.ErrorMessage <- err
 			continue
 		}
 		if len(newTucao) == 0 {
@@ -131,7 +133,8 @@ func UpdateTucao() {
 		tucaoBuff.WriteString("=======吐槽=======\n")
 		err = tucaoTemplate.Execute(&tucaoBuff, newTucao)
 		if err != nil {
-			log.Println(err)
+			//log.Println(err)
+			channel.ErrorMessage <- err
 			continue
 		}
 		numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(

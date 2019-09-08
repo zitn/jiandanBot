@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/spf13/viper"
 	"io/ioutil"
-	"log"
 	"myTeleBot/channel"
 	"myTeleBot/types"
 	"net/http"
@@ -23,13 +22,15 @@ func GetJiandan() {
 	for {
 		comments, err := getCommentList()
 		if err != nil {
-			log.Println(err)
+			channel.ErrorMessage <- err
+			//log.Println(err)
 			continue
 		}
 		for _, comment := range comments {
 			newTime, err = time.Parse("2006-01-02 15:04:05", comment.Date)
 			if err != nil {
-				log.Println(err)
+				//log.Println(err)
+				channel.ErrorMessage <- err
 				continue
 			}
 			if tmpTime.Before(newTime) {
@@ -41,7 +42,8 @@ func GetJiandan() {
 				if comment.SubCommentCount != "0" {
 					comment.TuCao, err = GetTucao(comment.Id)
 					if err != nil {
-						log.Println(err)
+						//log.Println(err)
+						channel.ErrorMessage <- err
 						continue
 					}
 				}

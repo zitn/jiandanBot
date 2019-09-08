@@ -9,6 +9,7 @@ import (
 
 func main() {
 	go bot.Run()
+	go maker.ErrorMaker()
 	go crawler.GetJiandan()
 	go maker.Jiandan()
 	go maker.UpdateTucao()

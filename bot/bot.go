@@ -4,6 +4,7 @@ import (
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/spf13/viper"
 	"log"
+	"myTeleBot/channel"
 	"time"
 )
 
@@ -26,8 +27,8 @@ func initBot() *tgbotapi.BotAPI {
 func Run() {
 	// debug日志开关
 	botAPI.Debug = false
-	go receiver()
 	go sender()
+	go receiver()
 	go commentSender()
 }
 
@@ -37,7 +38,8 @@ func receiver() {
 	updates, err := botAPI.GetUpdatesChan(u)
 
 	if err != nil {
-		log.Println(err)
+		//log.Println(err)
+		channel.ErrorMessage <- err
 		time.Sleep(5 * time.Second)
 		go receiver()
 		return
