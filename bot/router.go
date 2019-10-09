@@ -35,11 +35,11 @@ func callbackRouter(update tgbotapi.Update) {
 		switch commandAndData[0] {
 		case "updateTucao":
 			// 返回提示
-			_, _ = botAPI.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "更新中，无变化说明无吐槽，请勿重复点击"))
 			channel.RequireUpdateTucaoChannel <- types.TucaoUpdate{
 				CommentId:  commandAndData[1],
 				UpdateData: update,
 			}
+			_, _ = botAPI.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "更新中，无变化说明无吐槽，请勿重复点击"))
 		default:
 			_, _ = botAPI.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "command not found"))
 

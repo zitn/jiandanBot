@@ -28,10 +28,9 @@ type Comment struct {
 }
 
 type TuCao struct {
-	Code        int           `json:"code"`
-	HasNextPage bool          `json:"has_next_page"`
-	HotTucao    []TuCaoDetial `json:"hot_tucao"`
-	Tucao       []TuCaoDetial `json:"tucao"`
+	Code     int           `json:"code"`
+	HotTucao []TuCaoDetial `json:"hot_tucao"`
+	Tucao    []TuCaoDetial `json:"tucao"`
 }
 
 type TuCaoDetial struct {

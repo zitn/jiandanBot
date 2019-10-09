@@ -84,12 +84,11 @@ func getCommentList() ([]types.Comment, error) {
 }
 
 func GetTucao(commentID string) ([]types.TuCaoDetial, error) {
-	r, err := myClient.Get("https://i.jandan.net/tucao/" + commentID)
+	r, err := myClient.Get("https://jandan.net/tucao/all/" + commentID)
 	if err != nil {
 		return nil, errors.New("read body error")
 	}
 	body, err := ioutil.ReadAll(r.Body)
-
 	if err != nil {
 		return nil, errors.New("read body error")
 	}
