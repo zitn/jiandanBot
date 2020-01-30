@@ -8,7 +8,7 @@ import (
 
 func ErrorMaker() {
 	for errorMessage := range channel.ErrorMessage {
-		newErrorMessage := tgbotapi.NewMessage(viper.GetInt64("150606003"), errorMessage.Error())
+		newErrorMessage := tgbotapi.NewMessage(viper.GetInt64("AdminID"), errorMessage.Error())
 		channel.NormalMessageChannel <- newErrorMessage
 	}
 }

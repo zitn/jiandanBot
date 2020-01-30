@@ -16,7 +16,7 @@ var (
 	funcMap = template.FuncMap{"deleteHTML": deleteHTML}
 
 	// 楼主发言模板
-	commentTemplateText = `<a href="https://jandan.net/t/{{.Id}}">原帖链接</a>
+	commentTemplateText = `[原帖链接](https://jandan.net/t/{{.Id}})
 {{.Author}}:{{.ContentText}}
 OO:{{.OO}} XX:{{.XX}}`
 	commentTemplate, _ = template.New("comment").Funcs(funcMap).Parse(commentTemplateText)
@@ -55,14 +55,14 @@ func Jiandan() {
 						Type:      "photo",
 						Media:     pic,
 						Caption:   commentBuff.String(),
-						ParseMode: tgbotapi.ModeHTML,
+						ParseMode: tgbotapi.ModeMarkdown,
 					})
 				} else {
 					medias = append(medias, tgbotapi.InputMediaVideo{
 						Type:      "video",
 						Media:     pic,
 						Caption:   commentBuff.String(),
-						ParseMode: tgbotapi.ModeHTML,
+						ParseMode: tgbotapi.ModeMarkdown,
 					})
 				}
 				textAdded = true
