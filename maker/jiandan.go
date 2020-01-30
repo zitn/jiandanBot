@@ -102,6 +102,7 @@ func Jiandan() {
 				DisableNotification: true,
 				ReplyMarkup:         numericKeyboard,
 			},
+			ParseMode:             tgbotapi.ModeMarkdown,
 			Text:                  tucaoBuff.String(),
 			DisableWebPagePreview: true,
 		}
