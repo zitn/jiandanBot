@@ -165,6 +165,6 @@ func deleteHTML(s string) string {
 		re1, _ := regexp.Compile(`<[\S\s]+?>`)
 		s = re1.ReplaceAllString(s, "")
 	}
-	s = strings.Replace(s, "@", "`+`", -1)
+	s = strings.Replace(s, "@", "`", -1)
 	return s
 }
