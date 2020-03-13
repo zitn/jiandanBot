@@ -10,7 +10,7 @@ import (
 func main() {
 	go bot.Run()
 	go maker.ErrorMaker()
-	go crawler.GetJiandan()
+	go crawler.GetJianDan()
 	go maker.Jiandan()
 	go maker.UpdateTucao()
 	// 暴力的防止主进程退出

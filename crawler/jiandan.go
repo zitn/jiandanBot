@@ -1,35 +1,33 @@
 package crawler
 
 import (
-	"encoding/json"
-	"errors"
+	"fmt"
+	"github.com/go-resty/resty/v2"
+	"github.com/json-iterator/go"
 	"github.com/spf13/viper"
-	"io/ioutil"
 	"myTeleBot/channel"
 	"myTeleBot/types"
-	"net/http"
 	"time"
 )
 
 var (
-	myClient = &http.Client{Timeout: 30 * time.Second}
+	request = resty.New()
+	json    = jsoniter.ConfigFastest
 )
 
-func GetJiandan() {
-	lastCommentTime := time.Now().Add(-time.Hour)
+func GetJianDan() {
+	lastCommentTime := time.Now().Add(-time.Minute * 5)
 	var newTime time.Time
 	tmpTime := lastCommentTime
 	for {
-		comments, err := getCommentList()
+		comments, err := getNewComments()
 		if err != nil {
 			channel.ErrorMessage <- err
-			//log.Println(err)
 			continue
 		}
 		for _, comment := range comments {
 			newTime, err = time.Parse("2006-01-02 15:04:05", comment.Date)
 			if err != nil {
-				//log.Println(err)
 				channel.ErrorMessage <- err
 				continue
 			}
@@ -40,12 +38,8 @@ func GetJiandan() {
 			if lastCommentTime.Before(newTime) {
 				// 如果新帖子的吐槽数不为0,则获取吐槽
 				if comment.SubCommentCount != "0" {
-					comment.TuCao, err = GetTucao(comment.Id)
-					if err != nil {
-						//log.Println(err)
-						channel.ErrorMessage <- err
-						continue
-					}
+					// todo 获取吐槽失败的错误在函数内部处理
+					comment.TuCao = GetTucao(comment.Id)
 				}
 				channel.CommentsChannel <- comment
 			} else {
@@ -61,45 +55,24 @@ func GetJiandan() {
 	}
 }
 
-func getCommentList() ([]types.Comment, error) {
-	r, err := myClient.Get(viper.GetString("ApiAddress"))
+func getNewComments() ([]types.Comment, error) {
+	response, err := request.R().Get(viper.GetString("ApiAddress"))
 	if err != nil {
-		return nil, errors.New("time out")
+		return nil, err
 	}
-	body, err := ioutil.ReadAll(r.Body)
-
-	if err != nil {
-		return nil, errors.New("read body error")
-	}
-	var commentList types.CommentList
-	err = json.Unmarshal(body, &commentList)
-	if err != nil {
-		return nil, errors.New("unmarshal error")
-	}
-	err = r.Body.Close()
-	if err != nil {
-		return nil, errors.New("can't close client")
-	}
-	return commentList.Comments, nil
+	var comments []types.Comment
+	json.Get(response.Body(), "comments").ToVal(&comments)
+	return comments, nil
 }
 
-func GetTucao(commentID string) ([]types.TuCaoDetial, error) {
-	r, err := myClient.Get("https://jandan.net/tucao/all/" + commentID)
+func GetTucao(commentID string) []types.TuCadDetail {
+	response, err := request.R().Get("https://api.jandan.net/api/v1/tucao/list/" + commentID)
 	if err != nil {
-		return nil, errors.New("read body error")
+		return nil
 	}
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, errors.New("read body error")
-	}
-	err = r.Body.Close()
-	if err != nil {
-		return nil, errors.New("can't close client")
-	}
-	var tuCao types.TuCao
-	err = json.Unmarshal(body, &tuCao)
-	if err != nil {
-		return nil, errors.New("unmarshal error")
-	}
-	return tuCao.Tucao, nil
+	var TucaoDetails []types.TuCadDetail
+	json.Get(response.Body(), "data").ToVal(&TucaoDetails)
+	fmt.Println(commentID)
+	fmt.Println(TucaoDetails)
+	return TucaoDetails
 }

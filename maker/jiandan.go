@@ -1,44 +1,46 @@
 package maker
 
 import (
-	"bytes"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/spf13/viper"
-	"html/template"
 	"myTeleBot/channel"
 	"myTeleBot/crawler"
 	"myTeleBot/types"
-	"regexp"
+	"strconv"
 	"strings"
 )
 
-var (
-	funcMap = template.FuncMap{"deleteHTML": deleteHTML}
-
-	// 楼主发言模板
-	commentTemplateText = `[原帖链接](https://jandan.net/t/{{.Id}})
-{{.Author}}:{{.ContentText}}
-OO:{{.OO}} XX:{{.XX}}`
-	commentTemplate, _ = template.New("comment").Funcs(funcMap).Parse(commentTemplateText)
-
-	// 吐槽模板
-	tucaoTemplateText = `{{range .}}{{.Author}}:{{.Content|deleteHTML}}
-OO:{{.OO}} XX:{{.XX}}
-{{end}}`
-	tucaoTemplate, _ = template.New("tucao").Funcs(funcMap).Parse(tucaoTemplateText)
-)
+//var (
+//	funcMap = template.FuncMap{"deleteHTML": deleteHTML}
+//
+//	// 楼主发言模板
+//	commentTemplateText = `[原帖链接](https://jandan.net/t/{{.Id}})
+//{{.Author}}:{{.ContentText}}
+//OO:{{.OO}} XX:{{.XX}}`
+//	commentTemplate, _ = template.New("comment").Funcs(funcMap).Parse(commentTemplateText)
+//
+//	// 吐槽模板
+//	tucaoTemplateText = `{{range .}}{{.Author}}:{{.Content|deleteHTML}}
+//OO:{{.OO}} XX:{{.XX}}
+//{{end}}`
+//	tucaoTemplate, _ = template.New("tucao").Funcs(funcMap).Parse(tucaoTemplateText)
+//)
 
 func Jiandan() {
 	//  处理每一条帖子,然后发送
 	for comment := range channel.CommentsChannel {
-		var commentBuff bytes.Buffer
 
-		err := commentTemplate.Execute(&commentBuff, comment)
-		if err != nil {
-			//log.Println(err)
-			channel.ErrorMessage <- err
-			continue
-		}
+		var caption strings.Builder
+		caption.WriteString("[原帖链接](https://jandan.net/t/")
+		caption.WriteString(comment.Id)
+		caption.WriteString(") By ")
+		caption.WriteString(comment.Author)
+		caption.WriteString("\n")
+		caption.WriteString(comment.ContentText)
+		caption.WriteString("\nOO:")
+		caption.WriteString(comment.OO)
+		caption.WriteString("   XX:")
+		caption.WriteString(comment.XX)
 
 		var medias []interface{}
 		textAdded := false
@@ -54,21 +56,20 @@ func Jiandan() {
 					medias = append(medias, tgbotapi.InputMediaPhoto{
 						Type:      "photo",
 						Media:     pic,
-						Caption:   commentBuff.String(),
+						Caption:   caption.String(),
 						ParseMode: tgbotapi.ModeMarkdown,
 					})
 				} else {
 					medias = append(medias, tgbotapi.InputMediaVideo{
 						Type:      "video",
 						Media:     pic,
-						Caption:   commentBuff.String(),
+						Caption:   caption.String(),
 						ParseMode: tgbotapi.ModeMarkdown,
 					})
 				}
 				textAdded = true
 			}
 		}
-		commentBuff.Reset()
 
 		newComment := tgbotapi.MediaGroupConfig{
 			BaseChat: tgbotapi.BaseChat{
@@ -78,18 +79,12 @@ func Jiandan() {
 		}
 
 		// 吐槽
-		var tucaoBuff bytes.Buffer
-		tucaoBuff.WriteString("=======吐槽=======\n")
+		tuCao := "========吐槽========"
 		if comment.SubCommentCount != "0" {
-
-			err = tucaoTemplate.Execute(&tucaoBuff, comment.TuCao)
-			if err != nil {
-				//log.Println(err)
-				channel.ErrorMessage <- err
-				continue
-			}
+			tuCao = generateTuCao(comment.TuCao)
 		}
 
+		// 更新按娘
 		numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("更新吐槽", "updateTucao "+comment.Id),
@@ -103,10 +98,9 @@ func Jiandan() {
 				ReplyMarkup:         numericKeyboard,
 			},
 			ParseMode:             tgbotapi.ModeMarkdown,
-			Text:                  tucaoBuff.String(),
+			Text:                  tuCao,
 			DisableWebPagePreview: true,
 		}
-		tucaoBuff.Reset()
 
 		newMessage := types.CommentMessage{
 			HaveTucao:      comment.SubCommentCount == "0",
@@ -118,26 +112,41 @@ func Jiandan() {
 	}
 }
 
+func generateTuCao(tuCaoDetail []types.TuCadDetail) string {
+	var tuCaoBuilder strings.Builder
+	for _, detail := range tuCaoDetail {
+		// 如果吐槽中有图片,将图片链接添加进去
+		for _, imageLink := range detail.Images {
+			detail.Content = strings.Replace(detail.Content, `#img#`, " [图片]("+imageLink.FullUrl+") ", 1)
+		}
+		// 如果吐槽中at了别人,将其替换为 +username 的形式
+		for _, atComment := range detail.AtComments {
+			detail.Content = strings.Replace(detail.Content, `#at#`, " +*"+atComment.AtAuthor+"*", 1)
+		}
+		tuCaoBuilder.WriteString("*")
+		tuCaoBuilder.WriteString(detail.Author)
+		tuCaoBuilder.WriteString("*: ")
+		tuCaoBuilder.WriteString(detail.Content)
+		tuCaoBuilder.WriteString("\nOO:")
+		tuCaoBuilder.WriteString(strconv.Itoa(detail.OO))
+		tuCaoBuilder.WriteString("  XX:")
+		tuCaoBuilder.WriteString(strconv.Itoa(detail.XX))
+		tuCaoBuilder.WriteString("\n")
+	}
+	return tuCaoBuilder.String()
+}
+
 func UpdateTucao() {
 	for req := range channel.RequireUpdateTucaoChannel {
-		newTucao, err := crawler.GetTucao(req.CommentId)
-		if err != nil {
-			//log.Println(err)
-			channel.ErrorMessage <- err
+		newTucaoDetails := crawler.GetTucao(req.CommentId)
+		if len(newTucaoDetails) == 0 {
 			continue
 		}
-		if len(newTucao) == 0 {
-			//处理无吐槽的情况
+		newTuCaoStr := generateTuCao(newTucaoDetails)
+		if len(newTuCaoStr) < len(req.UpdateData.Message.Text)-20 {
 			continue
 		}
-		var tucaoBuff bytes.Buffer
-		tucaoBuff.WriteString("=======吐槽=======\n")
-		err = tucaoTemplate.Execute(&tucaoBuff, newTucao)
-		if err != nil {
-			//log.Println(err)
-			channel.ErrorMessage <- err
-			continue
-		}
+
 		numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("更新吐槽", "updateTucao "+req.CommentId),
@@ -151,20 +160,9 @@ func UpdateTucao() {
 				MessageID:       req.UpdateData.CallbackQuery.Message.MessageID,
 				ReplyMarkup:     &numericKeyboard,
 			},
-			Text:                  tucaoBuff.String(),
+			Text:                  newTuCaoStr,
 			DisableWebPagePreview: true,
 		}
-		tucaoBuff.Reset()
 		channel.NormalMessageChannel <- editedMsg
 	}
-}
-
-// 删除@人标签的过滤器
-func deleteHTML(s string) string {
-	if strings.Contains(s, "<a") {
-		re1, _ := regexp.Compile(`<[\S\s]+?>`)
-		s = re1.ReplaceAllString(s, "")
-	}
-	s = strings.Replace(s, "@", "`", -1)
-	return s
 }
