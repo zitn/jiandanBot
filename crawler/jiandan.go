@@ -1,7 +1,6 @@
 package crawler
 
 import (
-	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/json-iterator/go"
 	"github.com/spf13/viper"
@@ -72,7 +71,5 @@ func GetTucao(commentID string) []types.TuCadDetail {
 	}
 	var TucaoDetails []types.TuCadDetail
 	json.Get(response.Body(), "data").ToVal(&TucaoDetails)
-	fmt.Println(commentID)
-	fmt.Println(TucaoDetails)
 	return TucaoDetails
 }

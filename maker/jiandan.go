@@ -143,6 +143,9 @@ func UpdateTucao() {
 			continue
 		}
 		newTuCaoStr := generateTuCao(newTucaoDetails)
+		if req.UpdateData.Message == nil {
+			continue
+		}
 		if len(newTuCaoStr) < len(req.UpdateData.Message.Text)-20 {
 			continue
 		}
