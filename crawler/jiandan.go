@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/viper"
 	"myTeleBot/channel"
 	"myTeleBot/types"
+	"net/http"
 	"time"
 )
 
@@ -67,6 +68,12 @@ func getNewComments() ([]types.Comment, error) {
 func GetTucao(commentID string) []types.TuCadDetail {
 	response, err := request.R().Get("https://api.jandan.net/api/v1/tucao/list/" + commentID)
 	if err != nil {
+		return nil
+	}
+	if response.StatusCode() != http.StatusOK {
+		return nil
+	}
+	if response.Body() == nil {
 		return nil
 	}
 	var TucaoDetails []types.TuCadDetail
