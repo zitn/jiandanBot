@@ -1,11 +1,13 @@
 package crawler
 
 import (
+	"errors"
 	"github.com/go-resty/resty/v2"
 	"github.com/json-iterator/go"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"myTeleBot/channel"
-	"myTeleBot/types"
+	"jiandanBot/channel"
+	"jiandanBot/types"
 	"net/http"
 	"time"
 )
@@ -16,19 +18,20 @@ var (
 )
 
 func GetJianDan() {
+	log1 := logrus.WithField("func", "GetJianDan")
 	lastCommentTime := time.Now().Add(-time.Minute * 5)
 	var newTime time.Time
 	tmpTime := lastCommentTime
 	for {
 		comments, err := getNewComments()
 		if err != nil {
-			channel.ErrorMessage <- err
+			log1.WithField("err in ", "getNewComments").Error(err)
 			continue
 		}
 		for _, comment := range comments {
 			newTime, err = time.Parse("2006-01-02 15:04:05", comment.Date)
 			if err != nil {
-				channel.ErrorMessage <- err
+				log1.WithField("err in ", "time.Parse").Error(err)
 				continue
 			}
 			if tmpTime.Before(newTime) {
@@ -61,19 +64,26 @@ func getNewComments() ([]types.Comment, error) {
 		return nil, err
 	}
 	var comments []types.Comment
+	if response.Body() == nil {
+		return nil, errors.New("response is empty")
+	}
 	json.Get(response.Body(), "comments").ToVal(&comments)
 	return comments, nil
 }
 
 func GetTucao(commentID string) []types.TuCadDetail {
+	log1 := logrus.WithField("func", "GetTucao")
 	response, err := request.R().Get("https://api.jandan.net/api/v1/tucao/list/" + commentID)
 	if err != nil {
+		log1.WithField("err in", "request").WithField("commentID", commentID).Error(err)
 		return nil
 	}
 	if response.StatusCode() != http.StatusOK {
+		log1.WithField("err in", "response.StatusCode").WithField("commentID", commentID).Error("response.StatusCode is", response.StatusCode())
 		return nil
 	}
 	if response.Body() == nil {
+		log1.WithField("err in", "response.Body").WithField("commentID", commentID).Error("response body is nil")
 		return nil
 	}
 	var TucaoDetails []types.TuCadDetail

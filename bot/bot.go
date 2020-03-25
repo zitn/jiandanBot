@@ -2,15 +2,14 @@ package bot
 
 import (
 	"github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"log"
-	"myTeleBot/channel"
-	"time"
 )
 
 var (
 	// 包级别变量，方便包内调用
-	botAPI = initBot()
+	botAPI *tgbotapi.BotAPI
 )
 
 // 初始化bot
@@ -19,12 +18,13 @@ func initBot() *tgbotapi.BotAPI {
 	if err != nil {
 		log.Panic(err)
 	}
-	log.Println("init done")
+	logrus.Info("init done, start working")
 	return api
 }
 
 // 初始化 bot 的各个服务
 func Run() {
+	botAPI = initBot()
 	// debug日志开关
 	botAPI.Debug = false
 	go sender()
@@ -38,10 +38,7 @@ func receiver() {
 	updates, err := botAPI.GetUpdatesChan(u)
 
 	if err != nil {
-		//log.Println(err)
-		channel.ErrorMessage <- err
-		time.Sleep(5 * time.Second)
-		go receiver()
+		logrus.WithField("func", "receiver").WithField("err in", "GetUpdatesChan").Panicln(err)
 		return
 	}
 

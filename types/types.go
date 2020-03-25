@@ -1,15 +1,8 @@
 package types
 
-import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-
-//type CommentList struct {
-//	Status        string    `json:"status"`
-//	CurrentPage   int       `json:"current_page"`
-//	TotalComments int       `json:"total_comments"`
-//	PageCount     int       `json:"page_count"`
-//	Count         int       `json:"count"`
-//	Comments      []Comment `json:"comments"`
-//}
+import (
+	"github.com/go-telegram-bot-api/telegram-bot-api"
+)
 
 type Comment struct {
 	Id              string        `json:"comment_ID"`

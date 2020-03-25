@@ -1,36 +1,22 @@
 package maker
 
 import (
+	"fmt"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"myTeleBot/channel"
-	"myTeleBot/crawler"
-	"myTeleBot/types"
+	"jiandanBot/channel"
+	"jiandanBot/crawler"
+	"jiandanBot/types"
 	"strconv"
 	"strings"
 )
 
-//var (
-//	funcMap = template.FuncMap{"deleteHTML": deleteHTML}
-//
-//	// 楼主发言模板
-//	commentTemplateText = `[原帖链接](https://jandan.net/t/{{.Id}})
-//{{.Author}}:{{.ContentText}}
-//OO:{{.OO}} XX:{{.XX}}`
-//	commentTemplate, _ = template.New("comment").Funcs(funcMap).Parse(commentTemplateText)
-//
-//	// 吐槽模板
-//	tucaoTemplateText = `{{range .}}{{.Author}}:{{.Content|deleteHTML}}
-//OO:{{.OO}} XX:{{.XX}}
-//{{end}}`
-//	tucaoTemplate, _ = template.New("tucao").Funcs(funcMap).Parse(tucaoTemplateText)
-//)
-
 func Jiandan() {
 	//  处理每一条帖子,然后发送
+	var caption strings.Builder
 	for comment := range channel.CommentsChannel {
 
-		var caption strings.Builder
 		caption.WriteString("[原帖链接](https://jandan.net/t/")
 		caption.WriteString(comment.Id)
 		caption.WriteString(") By ")
@@ -79,12 +65,16 @@ func Jiandan() {
 		}
 
 		// 吐槽
-		tuCao := "========吐槽========"
+		tuCao := "========暂无吐槽========"
 		if comment.SubCommentCount != "0" {
-			tuCao = generateTuCao(comment.TuCao)
+			tmp := generateTuCao(comment.TuCao)
+			if tmp == "" {
+				logrus.Error("generateTuCao", comment.TuCao)
+				tuCao = tmp
+			}
 		}
 
-		// 更新按娘
+		// 更新吐槽按钮
 		numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("更新吐槽", "updateTucao "+comment.Id),
@@ -108,7 +98,8 @@ func Jiandan() {
 			TucaoMessage:   newTucao,
 		}
 		channel.CommentMessageChannel <- newMessage
-
+		// todo remove dev code
+		caption.Reset()
 	}
 }
 
@@ -136,36 +127,36 @@ func generateTuCao(tuCaoDetail []types.TuCadDetail) string {
 	return tuCaoBuilder.String()
 }
 
-func UpdateTucao() {
-	for req := range channel.RequireUpdateTucaoChannel {
-		newTucaoDetails := crawler.GetTucao(req.CommentId)
-		if len(newTucaoDetails) == 0 {
-			continue
-		}
-		newTuCaoStr := generateTuCao(newTucaoDetails)
-		if req.UpdateData.Message == nil {
-			continue
-		}
-		if len(newTuCaoStr) < len(req.UpdateData.Message.Text)-20 {
-			continue
-		}
-
-		numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("更新吐槽", "updateTucao "+req.CommentId),
-			),
-		)
-
-		editedMsg := tgbotapi.EditMessageTextConfig{
-			BaseEdit: tgbotapi.BaseEdit{
-				//ChatID:          req.UpdateData.CallbackQuery.Message.Chat.ID,
-				ChannelUsername: viper.GetString("ChannelUsername"),
-				MessageID:       req.UpdateData.CallbackQuery.Message.MessageID,
-				ReplyMarkup:     &numericKeyboard,
-			},
-			Text:                  newTuCaoStr,
-			DisableWebPagePreview: true,
-		}
-		channel.NormalMessageChannel <- editedMsg
+func UpdateTucao(req tgbotapi.Update, commentID string) string {
+	if req.CallbackQuery.Message == nil {
+		fmt.Println(req)
+		return "本条吐槽无法被更新"
 	}
+	newTucaoDetails := crawler.GetTucao(commentID)
+	if len(newTucaoDetails) == 0 {
+		return "信号消失在了火星"
+	}
+	newTuCaoStr := generateTuCao(newTucaoDetails)
+	if len(newTuCaoStr) < len(req.CallbackQuery.Message.Text)-10 {
+		return "没有更多吐槽"
+	}
+
+	numericKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("更新吐槽", "updateTucao "+commentID),
+		),
+	)
+
+	editedMsg := tgbotapi.EditMessageTextConfig{
+		BaseEdit: tgbotapi.BaseEdit{
+			ChannelUsername: viper.GetString("ChannelUsername"),
+			MessageID:       req.CallbackQuery.Message.MessageID,
+			ReplyMarkup:     &numericKeyboard,
+		},
+		Text:                  newTuCaoStr,
+		DisableWebPagePreview: true,
+		ParseMode:             tgbotapi.ModeMarkdown,
+	}
+	channel.NormalMessageChannel <- editedMsg
+	return "已更新"
 }

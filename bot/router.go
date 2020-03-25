@@ -3,8 +3,7 @@ package bot
 import (
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/spf13/viper"
-	"myTeleBot/channel"
-	"myTeleBot/types"
+	"jiandanBot/maker"
 	"strings"
 )
 
@@ -30,22 +29,18 @@ func baseRouter(update tgbotapi.Update) {
 }
 
 func callbackRouter(update tgbotapi.Update) {
-	if update.CallbackQuery != nil {
-		commandAndData := strings.Fields(update.CallbackQuery.Data)
-		switch commandAndData[0] {
-		case "updateTucao":
-			// 返回提示
-			channel.RequireUpdateTucaoChannel <- types.TucaoUpdate{
-				CommentId:  commandAndData[1],
-				UpdateData: update,
-			}
-			_, _ = botAPI.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "更新中，无变化说明无吐槽，请勿重复点击"))
-		default:
-			_, _ = botAPI.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "command not found"))
+	commandAndData := strings.Fields(update.CallbackQuery.Data)
+	switch commandAndData[0] {
+	case "updateTucao":
+		result := maker.UpdateTucao(update, commandAndData[1])
 
-		}
-		return
+		// 返回提示
+		_, _ = botAPI.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, result))
+	default:
+		_, _ = botAPI.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "command not found"))
+
 	}
+	return
 }
 
 func updateApiAddress(update tgbotapi.Update) {
