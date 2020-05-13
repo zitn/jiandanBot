@@ -63,12 +63,18 @@ func getNewComments() ([]types.Comment, error) {
 	if err != nil {
 		return nil, err
 	}
-	var comments []types.Comment
+	if response.StatusCode() != 200 {
+		return nil, errors.New("response error")
+	}
+	var pageResult types.PageResult
 	if response.Body() == nil {
 		return nil, errors.New("response is empty")
 	}
-	json.Get(response.Body(), "comments").ToVal(&comments)
-	return comments, nil
+	err = json.Unmarshal(response.Body(), &pageResult)
+	if err != nil {
+		return nil, err
+	}
+	return pageResult.Comments, nil
 }
 
 func GetTucao(commentID string) []types.TuCadDetail {

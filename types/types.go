@@ -4,6 +4,15 @@ import (
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
+type PageResult struct {
+	Status        string    `json:"status"`
+	CurrentPage   int       `json:"current_page"`
+	TotalComments int       `json:"total_comments"`
+	PageCount     int       `json:"page_count"`
+	Count         int       `json:"count"`
+	Comments      []Comment `json:"comments"`
+}
+
 type Comment struct {
 	Id              string        `json:"comment_ID"`
 	PostId          string        `json:"comment_post_ID"`
