@@ -4,6 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"jiandanBot/channel"
 	"log"
+	"time"
 )
 
 // 普通消息sender
@@ -31,5 +32,7 @@ func commentSender() {
 		if err != nil {
 			log1.WithField("err in", "botAPI.Send").WithField("message is", message).Error(err)
 		}
+		// 睡1s防止发送过快
+		time.Sleep(1 * time.Second)
 	}
 }
