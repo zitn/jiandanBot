@@ -134,7 +134,7 @@ func UpdateTucao(req tgbotapi.Update, commentID string) string {
 	}
 	newTucaoDetails := crawler.GetTucao(commentID)
 	if len(newTucaoDetails) == 0 {
-		return "信号消失在了火星"
+		return "没有更多吐槽(确信)"
 	}
 	newTuCaoStr := generateTuCao(newTucaoDetails)
 	if len(newTuCaoStr) < len(req.CallbackQuery.Message.Text)-10 {
