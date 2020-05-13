@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -12,15 +13,20 @@ import (
 )
 
 func init() {
-	viper.SetConfigName("config") //配置文件名
-	viper.AddConfigPath("config") //配置文件所在的路径
-	viper.SetConfigType("json")   //配置文件类型
+	viper.SetConfigName("config") // 配置文件名
+	viper.AddConfigPath("config") // 配置文件所在的路径
+	viper.SetConfigType("json")   // 配置文件类型
 	err := viper.ReadInConfig()
 	if err != nil {
 		logrus.Panic(err)
 	}
-	errorMsg := new(ErrorMsg)
-	logrus.SetOutput(errorMsg)
+	debug := flag.Bool("debug", false, "debug")
+	flag.Parse()
+	if !*debug {
+		errorMsg := new(ErrorMsg)
+		logrus.SetOutput(errorMsg)
+	}
+
 }
 
 func main() {
