@@ -27,7 +27,7 @@ ApiAddress 可通过抓包官方app得到
 build命令：
 $ docker build -t bot . 
 run:
-$ docker run --name <bot_name> -d -v /<path>/config/:/config bot
+$ docker run --name <bot_name> -d -v /<path>/config/:/config/ bot
 查看log:
 $ docker logs -f <bot_name>
 ```
