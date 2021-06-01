@@ -2,14 +2,16 @@ package main
 
 import (
 	"flag"
+	"sync"
+
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+
 	"jiandanBot/bot"
 	"jiandanBot/channel"
 	"jiandanBot/crawler"
 	"jiandanBot/maker"
-	"sync"
 )
 
 func init() {

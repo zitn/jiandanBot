@@ -2,14 +2,16 @@ package crawler
 
 import (
 	"errors"
+	"net/http"
+	"time"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+
 	"jiandanBot/channel"
 	"jiandanBot/types"
-	"net/http"
-	"time"
 )
 
 var (
@@ -17,9 +19,35 @@ var (
 	json    = jsoniter.ConfigFastest
 )
 
+func init() {
+	header := map[string]string{
+		"accept":                    `text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9`,
+		"accept-language":           `zh-CN,zh-TW;q=0.9,zh;q=0.8,en-US;q=0.7,en;q=0.6`,
+		"sec-ch-ua":                 ` " Not;A Brand";v="99", "Google Chrome";v="91", "Chromium";v="91"`,
+		"sec-ch-ua-mobile":          "?0",
+		"sec-fetch-dest":            "document",
+		"sec-fetch-mode":            "navigate",
+		"sec-fetch-site":            "none",
+		"sec-fetch-user":            "?1",
+		"upgrade-insecure-requests": "1",
+	}
+	request.SetHeaders(header)
+}
+
 func GetJianDan() {
 	log1 := logrus.WithField("func", "GetJianDan")
-	lastCommentTime := time.Now().Add(-time.Minute * 5)
+	var lastCommentTime time.Time
+	configFileTime := viper.GetString("lastCommentTime")
+	if configFileTime == "" {
+		lastCommentTime = time.Now().Add(-time.Minute * 5)
+	} else {
+		var err error
+		lastCommentTime, err = time.Parse("2006-01-02 15:04:05", configFileTime)
+		if err != nil {
+			log1.Error(err)
+			lastCommentTime = time.Now().Add(-time.Minute * 5)
+		}
+	}
 	var newTime time.Time
 	tmpTime := lastCommentTime
 	for {
@@ -41,7 +69,6 @@ func GetJianDan() {
 			if lastCommentTime.Before(newTime) {
 				// 如果新帖子的吐槽数不为0,则获取吐槽
 				if comment.SubCommentCount != "0" {
-					// todo 获取吐槽失败的错误在函数内部处理
 					comment.TuCao = GetTucao(comment.Id)
 				}
 				channel.CommentsChannel <- comment
@@ -52,9 +79,9 @@ func GetJianDan() {
 		}
 
 		lastCommentTime = tmpTime
+		viper.Set("lastCommentTime", lastCommentTime.Format("2006-01-02 15:04:05"))
 		// 20分钟get一次数据
-		time.Sleep(20 * time.Minute)
-
+		time.Sleep(15 * time.Minute)
 	}
 }
 
@@ -77,7 +104,7 @@ func getNewComments() ([]types.Comment, error) {
 	return pageResult.Comments, nil
 }
 
-func GetTucao(commentID string) []types.TuCadDetail {
+func GetTucao(commentID string) []types.TuCaoDetail {
 	log1 := logrus.WithField("func", "GetTucao")
 	response, err := request.R().Get("https://api.jandan.net/api/v1/tucao/list/" + commentID)
 	if err != nil {
@@ -92,7 +119,7 @@ func GetTucao(commentID string) []types.TuCadDetail {
 		log1.WithField("err in", "response.Body").WithField("commentID", commentID).Error("response body is nil")
 		return nil
 	}
-	var TucaoDetails []types.TuCadDetail
-	json.Get(response.Body(), "data").ToVal(&TucaoDetails)
+	var TucaoDetails []types.TuCaoDetail
+	json.Get(response.Body(), "data", "list").ToVal(&TucaoDetails)
 	return TucaoDetails
 }

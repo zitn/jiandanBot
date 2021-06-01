@@ -1,10 +1,12 @@
 package bot
 
 import (
+	"strings"
+
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/spf13/viper"
+
 	"jiandanBot/maker"
-	"strings"
 )
 
 func baseRouter(update tgbotapi.Update) {
@@ -23,7 +25,7 @@ func baseRouter(update tgbotapi.Update) {
 	}
 
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-	//msg.ReplyToMessageID = update.Message.MessageID
+	// msg.ReplyToMessageID = update.Message.MessageID
 
 	_, _ = botAPI.Send(msg)
 }

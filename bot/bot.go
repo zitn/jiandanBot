@@ -1,10 +1,13 @@
 package bot
 
 import (
+	"log"
+	"net/http"
+	"net/url"
+
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"log"
 )
 
 var (
@@ -14,12 +17,28 @@ var (
 
 // 初始化bot
 func initBot() *tgbotapi.BotAPI {
-	api, err := tgbotapi.NewBotAPI(viper.GetString("Token"))
-	if err != nil {
-		log.Panic(err)
+	if viper.GetString("telegram_proxy") == "" {
+		api, err := tgbotapi.NewBotAPI(viper.GetString("Token"))
+		if err != nil {
+			log.Panic(err)
+		}
+		logrus.Info("init done, start working")
+		return api
+	} else {
+		proxy := func(_ *http.Request) (*url.URL, error) {
+			return url.Parse(viper.GetString("telegram_proxy"))
+		}
+		httpClient := &http.Client{
+			Transport: &http.Transport{
+				Proxy: proxy,
+			},
+		}
+		api, err := tgbotapi.NewBotAPIWithClient(viper.GetString("Token"), httpClient)
+		if err != nil {
+			log.Panic(err)
+		}
+		return api
 	}
-	logrus.Info("init done, start working")
-	return api
 }
 
 // 初始化 bot 的各个服务

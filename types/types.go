@@ -26,10 +26,10 @@ type Comment struct {
 	SubCommentCount string        `json:"sub_comment_count"`
 	ContentText     string        `json:"text_content"`
 	Pics            []string      `json:"pics"`
-	TuCao           []TuCadDetail `json:"-"`
+	TuCao           []TuCaoDetail `json:"-"`
 }
 
-type TuCadDetail struct {
+type TuCaoDetail struct {
 	Id         int          `json:"id"`
 	PostId     int          `json:"post_id"`
 	Author     string       `json:"author"`

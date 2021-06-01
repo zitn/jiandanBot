@@ -2,14 +2,16 @@ package maker
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+
 	"jiandanBot/channel"
 	"jiandanBot/crawler"
 	"jiandanBot/types"
-	"strconv"
-	"strings"
 )
 
 func Jiandan() {
@@ -20,9 +22,9 @@ func Jiandan() {
 		caption.WriteString("[原帖链接](https://jandan.net/t/")
 		caption.WriteString(comment.Id)
 		caption.WriteString(") By ")
-		caption.WriteString(comment.Author)
+		caption.WriteString(strings.ReplaceAll(strings.ReplaceAll(comment.Author, "_", "-"), "*", "x"))
 		caption.WriteString("\n")
-		caption.WriteString(comment.ContentText)
+		caption.WriteString(strings.ReplaceAll(strings.ReplaceAll(comment.ContentText, "_", "-"), "*", "x"))
 		caption.WriteString("\nOO:")
 		caption.WriteString(comment.OO)
 		caption.WriteString("   XX:")
@@ -70,6 +72,7 @@ func Jiandan() {
 			tmp := generateTuCao(comment.TuCao)
 			if tmp == "" {
 				logrus.Error("generateTuCao", comment.TuCao)
+			} else {
 				tuCao = tmp
 			}
 		}
@@ -93,6 +96,7 @@ func Jiandan() {
 		}
 
 		newMessage := types.CommentMessage{
+
 			HaveTucao:      comment.SubCommentCount == "0",
 			CommentMessage: newComment,
 			TucaoMessage:   newTucao,
@@ -103,7 +107,7 @@ func Jiandan() {
 	}
 }
 
-func generateTuCao(tuCaoDetail []types.TuCadDetail) string {
+func generateTuCao(tuCaoDetail []types.TuCaoDetail) string {
 	var tuCaoBuilder strings.Builder
 	for _, detail := range tuCaoDetail {
 		// 如果吐槽中有图片,将图片链接添加进去
