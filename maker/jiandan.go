@@ -31,32 +31,24 @@ func Jiandan() {
 		caption.WriteString(comment.XX)
 
 		var medias []interface{}
-		textAdded := false
 		for _, pic := range comment.Pics {
-			if textAdded {
-				if pic[len(pic)-3:] != "gif" {
-					medias = append(medias, tgbotapi.NewInputMediaPhoto(pic))
-				} else {
-					medias = append(medias, tgbotapi.NewInputMediaVideo(pic))
-				}
-			} else {
-				if pic[len(pic)-3:] != "gif" {
-					medias = append(medias, tgbotapi.InputMediaPhoto{
-						Type:      "photo",
-						Media:     pic,
-						Caption:   caption.String(),
-						ParseMode: tgbotapi.ModeMarkdown,
-					})
-				} else {
-					medias = append(medias, tgbotapi.InputMediaVideo{
-						Type:      "video",
-						Media:     pic,
-						Caption:   caption.String(),
-						ParseMode: tgbotapi.ModeMarkdown,
-					})
-				}
-				textAdded = true
+			switch pic[len(pic)-3:] {
+			case "gif":
+				medias = append(medias, tgbotapi.InputMediaVideo{
+					Type:      "video",
+					Media:     pic,
+					Caption:   caption.String(),
+					ParseMode: tgbotapi.ModeMarkdown,
+				})
+			default:
+				medias = append(medias, tgbotapi.InputMediaPhoto{
+					Type:      "photo",
+					Media:     pic,
+					Caption:   caption.String(),
+					ParseMode: tgbotapi.ModeMarkdown,
+				})
 			}
+			caption.Reset()
 		}
 
 		newComment := tgbotapi.MediaGroupConfig{
