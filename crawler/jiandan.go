@@ -73,6 +73,10 @@ func GetJianDan() {
 				}
 				channel.CommentsChannel <- comment
 			} else {
+				// 处理sein的置顶帖
+				if comment.Author == "sein" {
+					continue
+				}
 				// 则停止发送剩余数据
 				break
 			}
